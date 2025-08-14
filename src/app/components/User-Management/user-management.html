@@ -1,0 +1,250 @@
+<!-- user-management.component.html -->
+<div class="user-management-container">
+  
+  <!-- العنوان الرئيسي -->
+  <div class="page-header">
+    <h2 class="page-title">
+      <i class="fas fa-users"></i>
+      إدارة المستخدمين
+    </h2>
+  </div>
+
+  <!-- نموذج إضافة/تحديث مستخدم -->
+  <div class="form-section">
+    <div class="form-header">
+      <h3>{{ isEditMode ? 'تعديل المستخدم' : 'إضافة مستخدم جديد' }}</h3>
+    </div>
+    
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
+      
+      <!-- الصف الأول -->
+      <div class="form-row">
+        <!-- الاسم -->
+        <div class="form-group">
+          <label for="name">الاسم <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="name"
+            formControlName="name"
+            class="form-control"
+            [class.error]="isFieldInvalid('name')"
+            placeholder="أدخل اسم المستخدم"
+          >
+          <div class="error-message" *ngIf="isFieldInvalid('name')">
+            {{ getErrorMessage('name') }}
+          </div>
+        </div>
+
+        <!-- البريد الإلكتروني -->
+        <div class="form-group">
+          <label for="email">البريد الإلكتروني <span class="required">*</span></label>
+          <input 
+            type="email" 
+            id="email"
+            formControlName="email"
+            class="form-control"
+            [class.error]="isFieldInvalid('email')"
+            placeholder="user@example.com"
+          >
+          <div class="error-message" *ngIf="isFieldInvalid('email')">
+            {{ getErrorMessage('email') }}
+          </div>
+        </div>
+      </div>
+
+        <!-- الصف الثاني -->
+        <div class="form-row">
+          <!-- رقم الهاتف -->
+          <div class="form-group">
+            <label for="phone">رقم الهاتف <span class="required">*</span></label>
+            <input 
+              type="tel" 
+              id="phone"
+              formControlName="phone"
+              class="form-control"
+              [class.error]="isFieldInvalid('phone')"
+              placeholder="01234567890"
+            >
+            <div class="error-message" *ngIf="isFieldInvalid('phone')">
+              {{ getErrorMessage('phone') }}
+            </div>
+          </div>
+
+          <!-- الدور -->
+          <div class="form-group">
+            <label for="role">الدور <span class="required">*</span></label>
+            <select 
+              id="role"
+              formControlName="role"
+              class="form-control"
+              [class.error]="isFieldInvalid('role')"
+            >
+              <option value="">اختر الدور</option>
+              <option *ngFor="let role of userRoles" [value]="role.value">
+                {{ role.label }}
+              </option>
+            </select>
+            <div class="error-message" *ngIf="isFieldInvalid('role')">
+              {{ getErrorMessage('role') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- الصف الثالث -->
+        <div class="form-row">
+          <!-- القسم -->
+          <div class="form-group">
+            <label for="departmentId">القسم</label>
+            <select 
+              id="departmentId"
+              formControlName="departmentId"
+              class="form-control"
+            >
+              <option value="">اختر القسم (اختياري)</option>
+              <option *ngFor="let department of departments" [value]="department._id">
+                {{ department.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- كلمة المرور (للمستخدمين الجدد فقط) -->
+          <div class="form-group" *ngIf="!isEditMode">
+            <label for="password">كلمة المرور <span class="required">*</span></label>
+            <input 
+              type="password" 
+              id="password"
+              formControlName="password"
+              class="form-control"
+              [class.error]="isFieldInvalid('password')"
+              placeholder="أدخل كلمة مرور قوية"
+            >
+            <div class="error-message" *ngIf="isFieldInvalid('password')">
+              {{ getErrorMessage('password') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- الصف الرابع -->
+        <div class="form-row">
+          <!-- الحالة -->
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                formControlName="isActive"
+                class="checkbox-input"
+              >
+              <span class="checkbox-text">نشط</span>
+            </label>
+          </div>
+        </div>
+
+      <!-- أزرار التحكم -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="!userForm.valid"
+        >
+          <i class="fas fa-save"></i>
+          {{ isEditMode ? 'تحديث' : 'إضافة' }}
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="resetForm()"
+        >
+          <i class="fas fa-times"></i>
+          إلغاء
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- جدول المستخدمين -->
+  <div class="table-section">
+    <div class="table-header">
+      <h3>قائمة المستخدمين</h3>
+      <div class="table-info">
+        إجمالي المستخدمين: {{ users.length }}
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-container" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>جاري تحميل البيانات...</p>
+    </div>
+
+    <!-- الجدول -->
+    <div class="table-responsive" *ngIf="!isLoading">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>الاسم</th>
+            <th>البريد الإلكتروني</th>
+            <th>الهاتف</th>
+            <th>الدور</th>
+            <th>القسم</th>
+            <th>الحالة</th>
+            <th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; trackBy: trackByUserId">
+            <td>
+              <div class="user-info">
+                <div class="user-avatar">
+                  {{ user.name.charAt(0) }}
+                </div>
+                <span class="user-name">{{ user.name }}</span>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone }}</td>
+            <td>
+              <span class="role-badge" [attr.data-role]="user.role">
+                {{ getRoleLabel(user.role) }}
+              </span>
+            </td>
+            <td>{{ getDepartmentName(user.departmentId || '') }}</td>
+            <td>
+              <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+                {{ user.isActive ? 'نشط' : 'غير نشط' }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button 
+                class="btn btn-icon btn-edit"
+                (click)="editUser(user)"
+                title="تعديل"
+              >
+                <i class="fas fa-edit"></i>
+              </button>
+              
+              <button 
+                class="btn btn-icon btn-delete"
+                (click)="deleteUser(user._id!)"
+                title="حذف"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          
+          <!-- رسالة عند عدم وجود مستخدمين -->
+          <tr *ngIf="users.length === 0 && !isLoading">
+            <td colspan="7" class="empty-state">
+              <div class="empty-content">
+                <i class="fas fa-users empty-icon"></i>
+                <p>لا يوجد مستخدمين حالياً</p>
+                <small>قم بإضافة أول مستخدم باستخدام النموذج أعلاه</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
