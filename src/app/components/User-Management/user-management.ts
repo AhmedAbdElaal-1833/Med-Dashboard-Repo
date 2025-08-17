@@ -1,26 +1,28 @@
 import { IconService } from './../../pages/service/icon.service';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService, User, CreateUserDto, UpdateUserDto } from '../../services/user';
 import { DepartmentService } from '../../services/departments'; // 1. Import DepartmentService
 import { HttpErrorResponse } from '@angular/common/http';
+import { NgFor, NgIf } from '@angular/common';
 
-// نموذج Department للـ dropdown
 export interface Department {
-  _id: string;
   name: string;
+  value: string; 
 }
+
 
 @Component({
   selector: 'app-user-management' ,
   templateUrl: './user-management.html',
-  styleUrls: ['./user-management.scss']
+  styleUrls: ['user-management.scss'],
+  imports:[FormsModule,ReactiveFormsModule]
 })
 export class UserComponent implements OnInit {
   
   // المتغيرات الأساسية
   users: User[] = [];
-  departments: Department[] = [];
+  departments: any[] = [];
   userForm: FormGroup;
   isEditMode = false;
   selectedUserId: string | null = null;
@@ -36,12 +38,12 @@ export class UserComponent implements OnInit {
     { value: 'Patient', label: 'مريض' }
   ];
 
-  constructor(
-    private fb: FormBuilder,
-    private userService: UserService,
-    private departmentService: DepartmentService // 2. Inject DepartmentService
-    // private toastr: ToastrService  // اختياري للـ notifications
-  ) {
+ constructor(
+  private fb: FormBuilder,
+  private userService: UserService,
+  private departmentService: DepartmentService,
+  private cdr: ChangeDetectorRef // Add this
+){
     // إنشاء النموذج
     this.userForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -60,39 +62,32 @@ export class UserComponent implements OnInit {
   }
 
   // تحميل المستخدمين
-  loadUsers(): void {
-    this.isLoading = true;
-    
-    this.userService.getUsers().subscribe({
-      next: (users) => {
-        this.users = users;
-        this.isLoading = false;
-        console.log('تم تحميل المستخدمين بنجاح:', users);
-      },
-      error: (error) => {
-        console.error('خطأ في تحميل المستخدمين:', error);
-        this.isLoading = false;
-        
-        // عرض رسالة خطأ للمستخدم
-        alert('فشل في تحميل المستخدمين. تحقق من الاتصال بالخادم.');
-        
-        // يمكنك استخدام toastr بدلاً من alert
-        // this.toastr.error('فشل في تحميل المستخدمين');
-      }
-    });
-  }
-
+ loadUsers(): void {
+  this.userService.getUsers().subscribe({
+    next: (response: any) => {
+      this.users = response.data?.users || response.users || response;
+      this.cdr.detectChanges(); // Force change detection
+      console.log('Users loaded:', this.users);
+    },
+    error: (error) => {
+      console.error('Error loading users:', error);
+    }
+  });
+}
   // تحميل الأقسام (إذا كان عندك departments endpoint)
   loadDepartments(): void {
-    // 3. Use the service to fetch real data
-    this.departmentService.getDepartments().subscribe({
-      next: (departments) => {
-        this.departments = departments;
-        console.log('Departments loaded successfully:', departments);
+ this.departmentService.getDepartments().subscribe({
+      next: (response: any) => {
+        // Extract departments array from the API response
+        const departments = response.data?.departments || response.departments || response;
+        this.departments=departments
+        console.log('Departments loaded:', departments);
       },
-      error: (error) => {
-        console.error('Error loading departments:', error);
-        alert('Failed to load departments. Please check server connection.');
+      error: (error: any) => {
+        console.log("error=================>", error);
+      },
+      complete: () => {
+        console.log('complete=================>');
       }
     });
   }
@@ -117,38 +112,35 @@ export class UserComponent implements OnInit {
   }
 
   // إنشاء مستخدم جديد
-  createUser(userData: CreateUserDto): void {
-    this.userService.createUser(userData).subscribe({
-      next: (HttpErrorResponse : any)=> {
+createUser(userData: CreateUserDto): void {
+  this.userService.createUser(userData).subscribe({
+    next: (response: any) => { // Fixed parameter name
+      console.log('User created successfully:', response); 
+      this.loadUsers();   
+      this.resetForm();
+      alert('تم إنشاء المستخدم بنجاح');
+    },
+    error: (error: HttpErrorResponse) => {
+      console.error('Error creating user:', error);
+      this.handleError(error, 'فشل في إنشاء المستخدم');
+    }
+  });
+}
 
-        console.log('تم إنشاء المستخدم بنجاح:', HttpErrorResponse); 
-        
-        // إعادة تحميل المستخدمين
-        this.loadUsers();   
-        this.resetForm();
-        
-        alert('تم إنشاء المستخدم بنجاح');
-        // this.toastr.success('تم إنشاء المستخدم بنجاح');
-          },
-      error: (error) => {
-        console.error('خطأ في إنشاء المستخدم:', error);
-        
-        // معالجة الأخطاء المختلفة
-        let errorMessage = 'فشل في إنشاء المستخدم';
-        
-        if (error.status === 400) {
-          errorMessage = 'بيانات غير صحيحة';
-        } else if (error.status === 401) {
-          errorMessage = 'غير مصرح لك بهذا الإجراء';
-        } else if (error.status === 409) {
-          errorMessage = 'البريد الإلكتروني موجود بالفعل';
-        }
-        
-        alert(errorMessage);
-        // this.toastr.error(errorMessage);
-      }
-    });
+// Add error handling method
+private handleError(error: HttpErrorResponse, defaultMessage: string): void {
+  let errorMessage = defaultMessage;
+  
+  if (error.status === 400) {
+    errorMessage = 'بيانات غير صحيحة';
+  } else if (error.status === 401) {
+    errorMessage = 'غير مصرح لك بهذا الإجراء';
+  } else if (error.status === 409) {
+    errorMessage = 'البريد الإلكتروني موجود بالفعل';
   }
+  
+  alert(errorMessage);
+}
 
   // تحديث مستخدم
   updateUser(id: string, userData: UpdateUserDto): void {
@@ -208,8 +200,8 @@ export class UserComponent implements OnInit {
         next: (HttpErrorResponse) => {
           console.log('تم حذف المستخدم بنجاح:', Response); 
           
-          this.loadUsers();
-          
+          this.ngOnInit();
+          this.cdr.detectChanges();     
           alert('تم حذف المستخدم بنجاح');
           // this.toastr.success('تم حذف المستخدم بنجاح');
         },
@@ -275,7 +267,7 @@ export class UserComponent implements OnInit {
   }
 
   getDepartmentName(departmentId: string): string {
-    const department = this.departments.find(d => d._id === departmentId);
+    const department = this.departments.find(d => d.value === departmentId);
     return department ? department.name : 'غير محدد';
   }
 

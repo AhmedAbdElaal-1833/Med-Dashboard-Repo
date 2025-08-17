@@ -7,16 +7,14 @@
     <ng-template #end>
         <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV()" />
     </ng-template>
-    
 </p-toolbar>
 
 <p-table
     #dt
     [value]="departments()"
     [rows]="10"
-    [columns]="cols"
     [paginator]="true"
-    [globalFilterFields]="['name', 'description', 'averageRating', 'staffCount']"
+    [globalFilterFields]="['name', 'description', 'averageRating', 'staffCount', 'numberOfReviews']"
     [tableStyle]="{ 'min-width': '75rem' }"
     [(selection)]="selectedDepartments"
     [rowHover]="true"
@@ -25,7 +23,7 @@
     [showCurrentPageReport]="true"
     [rowsPerPageOptions]="[10, 20, 30]"
 >
-    <ng-template #caption>
+    <ng-template pTemplate="caption">
         <div class="flex items-center justify-between">
             <h5 class="m-0">Manage Departments</h5>
             <p-iconfield>
@@ -34,7 +32,8 @@
             </p-iconfield>
         </div>
     </ng-template>
-    <ng-template #header>
+
+    <ng-template pTemplate="header">
         <tr>
             <th style="width: 3rem">
                 <p-tableHeaderCheckbox />
@@ -43,8 +42,7 @@
                 Name
                 <p-sortIcon field="name" />
             </th>
-            <th>Image</th>
-            <th pSortableColumn="description" style="min-width: 8rem">
+            <th pSortableColumn="description" style="min-width: 20rem">
                 Description
                 <p-sortIcon field="description" />
             </th>
@@ -52,26 +50,53 @@
                 Staff Count
                 <p-sortIcon field="staffCount" />
             </th>
-            <th pSortableColumn="averageRating" style="min-width: 12rem">
-                Reviews
+            <th pSortableColumn="averageRating" style="min-width: 10rem">
+                Rating
                 <p-sortIcon field="averageRating" />
+            </th>
+            <th pSortableColumn="numberOfReviews" style="min-width: 8rem">
+                Reviews
+                <p-sortIcon field="numberOfReviews" />
             </th>
             <th style="min-width: 12rem; text-align: center">Actions</th>
         </tr>
     </ng-template>
-    <ng-template #body let-department>
+
+    <ng-template pTemplate="body" let-department>
         <tr>
             <td style="width: 3rem">
                 <p-tableCheckbox [value]="department" />
             </td>
-            <td style="min-width: 16rem">{{ department.name }}</td>
-            <td>
-                <img [src]="department.image" [alt]="department.name" style="width: 64px" class="rounded" />
+            <td style="min-width: 16rem">
+                <div>
+                    <div class="font-semibold">{{ department.name }}</div>
+                    <div class="text-sm text-gray-500" *ngIf="department.nameAr">{{ department.nameAr }}</div>
+                </div>
             </td>
-            <td>{{ department.description }}</td>
-            <td>{{ department.staffCount }}</td>
+            <td style="max-width: 20rem">
+                <div class="line-clamp-2" [title]="department.description">
+                    {{ department.description }}
+                </div>
+                <div class="text-sm text-gray-500 mt-1" *ngIf="department.descriptionAr">
+                    {{ department.descriptionAr }}
+                </div>
+            </td>
+            <td class="text-center">
+                <p-tag 
+                    [value]="department.staffCount.toString()" 
+                    [severity]="department.staffCount > 0 ? 'success' : 'warning'">
+                </p-tag>
+            </td>
             <td>
-                <p-rating [(ngModel)]="department.averageRating" [readonly]="true" />
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-600">({{ department.averageRating.toFixed(1) }})</span>
+                </div>
+            </td>
+            <td class="text-center">
+                <p-tag 
+                    [value]="department.numberOfReviews.toString()" 
+                    severity="info">
+                </p-tag>
             </td>
             <td style="text-align: center">
                 <div class="flex justify-center gap-2">

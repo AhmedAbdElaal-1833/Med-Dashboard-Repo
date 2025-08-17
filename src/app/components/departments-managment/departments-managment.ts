@@ -90,30 +90,34 @@ export class DepartmentsManagment {
   ngOnInit() {
     this.getDepartments();
   }
-  getDepartments(){
+getDepartments(){
     this.departmentsService.getDepartments().subscribe({
-      next: (data:Idepartment[]) => {
-        this.departments.set(data)
+      next: (response: any) => {
+        // Extract departments array from the API response
+        const departments = response.data?.departments || response.departments || response;
+        this.departments.set(departments);
+        console.log('Departments loaded:', departments);
       },
-      error: (error:any) => {
-        console.log("error=================>",error);
+      error: (error: any) => {
+        console.log("error=================>", error);
       },
       complete: () => {
         console.log('complete=================>');
       }
     });
 
-      this.cols = [
-          { field: '_id', header: 'ID' },
-          { field: 'name', header: 'Name' },
-          { field: 'nameAr', header: 'Name (Arabic)' },
-          { field: 'description', header: 'Description' },
-          { field: 'descriptionAr', header: 'Description (Arabic)' },
-          { field: 'staffCount', header: 'Staff Count' },
-      ];
+    this.cols = [
+        { field: '_id', header: 'ID' },
+        { field: 'name', header: 'Name' },
+        { field: 'nameAr', header: 'Name (Arabic)' },
+        { field: 'description', header: 'Description' },
+        { field: 'descriptionAr', header: 'Description (Arabic)' },
+        { field: 'staffCount', header: 'Staff Count' },
+    ];
 
-      this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
-  }
+    this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
+}
+
 
   saveDepartment(){
     this.submitted = true;
