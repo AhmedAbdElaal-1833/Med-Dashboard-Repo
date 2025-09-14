@@ -1,0 +1,90 @@
+// إضافة هذه الـ styles للـ appointment.scss
+.appointment-details-table {
+  .p-datatable-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  // Patient columns styling
+  .bg-blue-25 {
+    background-color: #eff6ff !important;
+    border: 1px solid #dbeafe;
+  }
+
+  .bg-blue-50 {
+    background-color: #dbeafe !important;
+    font-weight: 600;
+    color: #1e40af;
+  }
+
+  // Doctor columns styling
+  .bg-green-25 {
+    background-color: #f0fdf4 !important;
+    border: 1px solid #dcfce7;
+  }
+
+  .bg-green-50 {
+    background-color: #dcfce7 !important;
+    font-weight: 600;
+    color: #166534;
+  }
+
+  // Department columns styling
+  .bg-orange-25 {
+    background-color: #fff7ed !important;
+    border: 1px solid #fed7aa;
+  }
+
+  .bg-orange-50 {
+    background-color: #fed7aa !important;
+    font-weight: 600;
+    color: #c2410c;
+  }
+
+  // Table header styling
+  .p-datatable-thead > tr > th {
+    padding: 0.75rem;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+  }
+
+  // Table body styling
+  .p-datatable-tbody > tr > td {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+
+  // Icons in table cells
+  .pi {
+    margin-left: 0.5rem;
+  }
+}
+
+// TreeTable row styling for detail rows
+:host ::ng-deep .p-treetable-tbody > tr[data-ri] > td[colspan="4"] {
+  padding: 0;
+  border: none;
+  
+  .appointment-details-table {
+    margin: 0;
+    
+    .p-datatable {
+      border: none;
+    }
+  }
+}
+
+// TreeTable expandable rows
+:host ::ng-deep .p-treetable .p-treetable-toggler {
+  margin-left: 0.5rem;
+}
+:host ::ng-deep .p-treetable-scrollable-header-box {
+  padding: 0rem !important;
+}
+:host ::ng-deep .p-treetable-scrollable-body {
+  overflow-y: auto !important;
+}
+// :host ::ng-deep .p-treetable-tbody td {
+//   width: 50% !important;
+// }

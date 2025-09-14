@@ -1,272 +1,500 @@
-<!-- user-management.component.html -->
-<div class="user-management-container">
-  
-  <!-- العنوان الرئيسي -->
-  <div class="page-header">
-    <h2 class="page-title">
-      <i class="fas fa-users"></i>
-      إدارة المستخدمين
-    </h2>
-  </div>
-
-  <!-- نموذج إضافة/تحديث مستخدم -->
-  <div class="form-section">
-    <div class="form-header">
-      <h3>{{ isEditMode ? 'تعديل المستخدم' : 'إضافة مستخدم جديد' }}</h3>
-    </div>
+<!-- Toolbar -->
+<p-toolbar styleClass="mb-6">
+    <ng-template #start>
+        <p-button 
+            label="مستخدم جديد" 
+            icon="pi pi-plus" 
+            severity="secondary" 
+            class="mr-2" 
+            (onClick)="openNew()" 
+        />
+        <p-button 
+            severity="danger" 
+            label="حذف المحدد" 
+            icon="pi pi-trash" 
+            outlined 
+            (onClick)="deleteSelectedUsers()" 
+            [disabled]="!selectedUsers || !selectedUsers.length" 
+        />
+    </ng-template>
     
-    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
-      
-      <!-- الصف الأول -->
-      <div class="form-row">
-        <!-- الاسم -->
-        <div class="form-group">
-          <label for="name">الاسم <span class="required">*</span></label>
-          <input 
-            type="text" 
-            id="name"
-            formControlName="name"
-            class="form-control"
-            [class.error]="isFieldInvalid('name')"
-            placeholder="أدخل اسم المستخدم"
-          >
-          @if (isFieldInvalid('name')) {
-            <div class="error-message">
-              {{ getErrorMessage('name') }}
-            </div>
-          }
+    <ng-template #end>
+        <p-button 
+            label="تصدير" 
+            icon="pi pi-upload" 
+            severity="secondary" 
+            (onClick)="exportCSV()" 
+        />
+    </ng-template>
+</p-toolbar>
+
+<!-- Users Table -->
+<p-table
+    #dt
+    [value]="users"
+    [rows]="10"
+    [paginator]="true"
+    [globalFilterFields]="['name', 'email', 'phone', 'role', 'gender']"
+    [tableStyle]="{ 'min-width': '75rem' }"
+    [(selection)]="selectedUsers"
+    [rowHover]="true"
+    dataKey="_id"
+    currentPageReportTemplate="عرض {first} إلى {last} من أصل {totalRecords} مستخدم"
+    [showCurrentPageReport]="true"
+    [rowsPerPageOptions]="[5, 10, 20, 50]"
+    [loading]="isLoading"
+    [totalRecords]="totalRecords"
+    styleClass="p-datatable-gridlines"
+    responsiveLayout="scroll"
+>
+    <!-- Table Caption -->
+    <ng-template pTemplate="caption">
+        <div class="flex items-center justify-between">
+            <h5 class="m-0">إدارة المستخدمين</h5>
+            <p-iconfield>
+                <p-inputicon styleClass="pi pi-search" />
+                <input 
+                    pInputText 
+                    type="text" 
+                    (input)="onGlobalFilter(dt, $event)" 
+                    placeholder="البحث..." 
+                />
+            </p-iconfield>
         </div>
+    </ng-template>
 
-        <!-- البريد الإلكتروني -->
-        <div class="form-group">
-          <label for="email">البريد الإلكتروني <span class="required">*</span></label>
-          <input 
-            type="email" 
-            id="email"
-            formControlName="email"
-            class="form-control"
-            [class.error]="isFieldInvalid('email')"
-            placeholder="user@example.com"
-          >
-          @if (isFieldInvalid('email')) {
-            <div class="error-message">
-              {{ getErrorMessage('email') }}
-            </div>
-          }
-        </div>
-      </div>
+    <!-- Table Header -->
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 3rem">
+                <p-tableHeaderCheckbox />
+            </th>
+            <th pSortableColumn="name" style="min-width:16rem">
+                الاسم
+                <p-sortIcon field="name" />
+            </th>
+            <th pSortableColumn="email" style="min-width: 20rem">
+                البريد الإلكتروني
+                <p-sortIcon field="email" />
+            </th>
+            <th pSortableColumn="phone" style="min-width:12rem">
+                الهاتف
+                <p-sortIcon field="phone" />
+            </th>
+            <th pSortableColumn="gender" style="min-width: 8rem">
+                الجنس
+                <p-sortIcon field="gender" />
+            </th>
+            <th pSortableColumn="role" style="min-width: 12rem">
+                الدور
+                <p-sortIcon field="role" />
+            </th>
+            <th style="min-width: 12rem">القسم</th>
+            <th style="min-width: 8rem">الحالة</th>
+            <th pSortableColumn="createdAt" style="min-width: 12rem">
+                تاريخ الإنشاء
+                <p-sortIcon field="createdAt" />
+            </th>
+            <th style="min-width: 12rem; text-align: center">الإجراءات</th>
+        </tr>
+    </ng-template>
 
-      <!-- الصف الثاني -->
-      <div class="form-row">
-        <!-- رقم الهاتف -->
-        <div class="form-group">
-          <label for="phone">رقم الهاتف <span class="required">*</span></label>
-          <input 
-            type="tel" 
-            id="phone"
-            formControlName="phone"
-            class="form-control"
-            [class.error]="isFieldInvalid('phone')"
-            placeholder="01234567890"
-          >
-          @if (isFieldInvalid('phone')) {
-            <div class="error-message">
-              {{ getErrorMessage('phone') }}
-            </div>
-          }
-        </div>
-
-        <!-- الدور -->
-        <div class="form-group">
-          <label for="role">الدور <span class="required">*</span></label>
-          <select 
-            id="role"
-            formControlName="role"
-            class="form-control"
-            [class.error]="isFieldInvalid('role')"
-          >
-            <option value="">اختر الدور</option>
-            @for (role of userRoles; track role.value) {
-              <option [value]="role.value">
-                {{ role.label }}
-              </option>
-            }
-          </select>
-          @if (isFieldInvalid('role')) {
-            <div class="error-message">
-              {{ getErrorMessage('role') }}
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- الصف الثالث -->
-      <div class="form-row">
-        <!-- القسم -->
-        <div class="form-group">
-          <label for="departmentId">القسم</label>
-          <select 
-            id="departmentId"
-            formControlName="departmentId"
-            class="form-control"
-          >
-            <option value="">اختر القسم (اختياري)</option>
-                @for (department of departments;track department._id) {
-                  <option [value]="department._id">
-                    {{ department.name }}
-                  </option>
-                }
-          </select>
-        </div>
-
-        <!-- كلمة المرور (للمستخدمين الجدد فقط) -->
-        @if (!isEditMode) {
-          <div class="form-group">
-            <label for="password">كلمة المرور <span class="required">*</span></label>
-            <input 
-              type="password" 
-              id="password"
-              formControlName="password"
-              class="form-control"
-              [class.error]="isFieldInvalid('password')"
-              placeholder="أدخل كلمة مرور قوية"
-            >
-            @if (isFieldInvalid('password')) {
-              <div class="error-message">
-                {{ getErrorMessage('password') }}
-              </div>
-            }
-          </div>
-        }
-      </div>
-
-      <!-- الصف الرابع -->
-      <div class="form-row">
-        <!-- الحالة -->
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              formControlName="isActive"
-              class="checkbox-input"
-            >
-            <span class="checkbox-text">نشط</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- أزرار التحكم -->
-      <div class="form-actions">
-        <button 
-          type="submit" 
-          class="btn btn-primary"
-          [disabled]="!userForm.valid"
-        >
-          <i class="fas fa-save"></i>
-          {{ isEditMode ? 'تحديث' : 'إضافة' }}
-        </button>
-        
-        <button 
-          type="button" 
-          class="btn btn-secondary"
-          (click)="resetForm()"
-        >
-          <i class="fas fa-times"></i>
-          إلغاء
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <!-- جدول المستخدمين -->
-  <div class="table-section">
-    <div class="table-header">
-      <h3>قائمة المستخدمين</h3>
-      <div class="table-info">
-        إجمالي المستخدمين: {{ users.length }}
-      </div>
-    </div>
-
-    <!-- Loading Spinner -->
-    @if (isLoading) {
-      <div class="loading-container">
-        <div class="spinner"></div>
-        <p>جاري تحميل البيانات...</p>
-      </div>
-    }
-
-    <!-- الجدول -->
-    @if (!isLoading) {
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>الاسم</th>
-              <th>البريد الإلكتروني</th>
-              <th>الهاتف</th>
-              <th>الدور</th>
-              <th>القسم</th>
-              <th>الحالة</th>
-              <th>الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (user of users; track trackByUserId($index, user)) {
-              <tr>
-                <td>
-                  <div class="user-info">
-                    <div class="user-avatar">
-                      {{ user.name.charAt(0) }}
+    <!-- Table Body -->
+    <ng-template pTemplate="body" let-user>
+        <tr>
+            <td style="width: 3rem">
+                <p-tableCheckbox [value]="user" />
+            </td>
+            <td style="min-width: 16rem">
+                <div class="flex items-center gap-3">
+                    <p-avatar 
+                        [label]="user.name.charAt(0).toUpperCase()" 
+                        styleClass="mr-2"
+                        size="normal"
+                        shape="circle"
+                        [style]="{ 'background-color': getUserAvatarColor(user.role), 'color': '#ffffff' }"
+                    ></p-avatar>
+                    <div>
+                        <div class="font-semibold">{{ user.name }}</div>
+                        <div class="text-sm text-gray-500">{{ user._id }}</div>
                     </div>
-                    <span class="user-name">{{ user.name }}</span>
-                  </div>
-                </td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.phone }}</td>
-                <td>
-                  <span class="role-badge" [attr.data-role]="user.role">
-                    {{ getRoleLabel(user.role) }}
-                  </span>
-                </td>
-                <td>{{ getDepartmentName(user.departmentId || '') }}</td>
-                <td>
-                  <span class="status-badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
-                    {{ user.isActive ? 'نشط' : 'غير نشط' }}
-                  </span>
-                </td>
-                <td class="actions-cell">
-                  <button 
-                    class="btn btn-icon btn-edit"
-                    (click)="editUser(user)"
-                  >
-                  تعديل
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  
-                  <button 
-                    class="btn btn-icon btn-delete"
-                    (click)="deleteUser(user._id!)"
-                  >
-                  حذف
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <!-- رسالة عند عدم وجود مستخدمين -->
-              <tr>
-                <td colspan="7" class="empty-state">
-                  <div class="empty-content">
-                    <i class="fas fa-users empty-icon"></i>
-                    <p>لا يوجد مستخدمين حالياً</p>
-                    <small>قم بإضافة أول مستخدم باستخدام النموذج أعلاه</small>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  </div>
-</div>
+                </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone }}</td>
+            <td>
+                <p-tag 
+                    [value]="getGenderLabel(user.gender)" 
+                    [severity]="user.gender === 'male' ? 'info' : 'secondary'">
+                </p-tag>
+            </td>
+            <td>
+                <p-tag 
+                    [value]="getRoleLabel(user.role)" 
+                    [severity]="getRoleSeverity(user.role)">
+                </p-tag>
+            </td>
+            <td>
+                <span class="text-sm">{{ getDepartmentName(user.department) }}</span>
+            </td>
+            <td>
+                <p-tag 
+                    [value]="getUserStatus(user)" 
+                    [severity]="getUserStatusSeverity(user)">
+                </p-tag>
+            </td>
+            <td>
+                <span class="text-sm">{{ formatDate(user.createdAt) }}</span>
+            </td>
+            <td style="text-align: center">
+                <div class="flex justify-center gap-2">
+                    <p-button 
+                        icon="pi pi-eye" 
+                        severity="info"
+                        size="small"
+                        [rounded]="true" 
+                        [outlined]="true" 
+                        (click)="viewUser(user)"
+                        pTooltip="عرض تفاصيل المستخدم"
+                        tooltipPosition="top" 
+                    />
+                    <p-button 
+                        icon="pi pi-pencil" 
+                        size="small"
+                        [rounded]="true" 
+                        [outlined]="true" 
+                        (click)="editUser(user)"
+                        pTooltip="تعديل المستخدم"
+                        tooltipPosition="top" 
+                    />
+                    <p-button 
+                        icon="pi pi-trash" 
+                        severity="danger" 
+                        size="small"
+                        [rounded]="true" 
+                        [outlined]="true" 
+                        (click)="deleteUser(user)"
+                        pTooltip="حذف المستخدم"
+                        tooltipPosition="top" 
+                    />
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+
+    <!-- Empty State -->
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="10" class="text-center p-6">
+                <div class="flex flex-col items-center gap-3">
+                    <i class="pi pi-users text-4xl text-gray-400"></i>
+                    <p class="text-lg font-medium text-gray-600">لا يوجد مستخدمين</p>
+                    <p class="text-sm text-gray-400">قم بإضافة أول مستخدم</p>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<!-- User Dialog -->
+<p-dialog 
+    [(visible)]="userDialog" 
+    [style]="{width: '50vw', height: '60vh'}" 
+    header="{{ isEditMode ? 'تعديل المستخدم' : 'إضافة مستخدم جديد' }}" 
+    [modal]="true"
+    styleClass="p-fluid"
+>
+    <ng-template #content>
+        <div class="flex flex-col gap-4">
+            
+            <!-- الصف الأول: الاسم والبريد الإلكتروني -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block font-bold mb-2">
+                        الاسم <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        pInputText 
+                        id="name" 
+                        [(ngModel)]="user.name" 
+                        required 
+                        autofocus 
+                        fluid 
+                        placeholder="أدخل اسم المستخدم"
+                    />
+                    <small class="text-red-500" *ngIf="submitted && !user.name?.trim()">
+                        الاسم مطلوب
+                    </small>
+                </div>
+
+                <div>
+                    <label for="email" class="block font-bold mb-2">
+                        البريد الإلكتروني <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        pInputText 
+                        id="email" 
+                        [(ngModel)]="user.email" 
+                        required 
+                        fluid 
+                        placeholder="user@example.com"
+                    />
+                    <small class="text-red-500" *ngIf="submitted && !user.email?.trim()">
+                        البريد الإلكتروني مطلوب
+                    </small>
+                </div>
+            </div>
+
+            <!-- الصف الثاني: الهاتف والجنس -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="phone" class="block font-bold mb-2">
+                        رقم الهاتف <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="tel" 
+                        pInputText 
+                        id="phone" 
+                        [(ngModel)]="user.phone" 
+                        required 
+                        fluid 
+                        placeholder="01234567890"
+                    />
+                    <small class="text-red-500" *ngIf="submitted && !user.phone?.trim()">
+                        رقم الهاتف مطلوب
+                    </small>
+                </div>
+
+                <div>
+                    <label for="gender" class="block font-bold mb-2">
+                        الجنس <span class="text-red-500">*</span>
+                    </label>
+                    <p-select 
+                        [(ngModel)]="user.gender" 
+                        [options]="genderOptions"
+                        optionLabel="label"
+                        optionValue="value" 
+                        placeholder="اختر الجنس"
+                        fluid
+                    />
+                    <small class="text-red-500" *ngIf="submitted && !user.gender?.trim()">
+                        الجنس مطلوب
+                    </small>
+                </div>
+            </div>
+
+            <!-- الصف الثالث: الدور والقسم -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="role" class="block font-bold mb-2">
+                        الدور <span class="text-red-500">*</span>
+                    </label>
+                    <p-select 
+                        [(ngModel)]="user.role" 
+                        [options]="userRoles"
+                        optionLabel="label"
+                        optionValue="value" 
+                        placeholder="اختر الدور"
+                        fluid
+                    />
+                    <small class="text-red-500" *ngIf="submitted && !user.role?.trim()">
+                        الدور مطلوب
+                    </small>
+                </div>
+
+                <div>
+                    <label for="departmentId" class="block font-bold mb-2">القسم</label>
+                    <p-select 
+                        [(ngModel)]="user.department" 
+                        [options]="departments"
+                        optionLabel="name"
+                        optionValue="_id" 
+                        placeholder="اختر القسم (اختياري)"
+                        fluid
+                    />
+                </div>
+            </div>
+
+            <!-- كلمة المرور (للمستخدمين الجدد فقط) -->
+            <div *ngIf="!isEditMode">
+                <label for="password" class="block font-bold mb-2">
+                    كلمة المرور <span class="text-red-500">*</span>
+                </label>
+                <p-password 
+                    [(ngModel)]="user.password"
+                    placeholder="أدخل كلمة مرور قوية"
+                    [toggleMask]="true"
+                    fluid
+                />
+                <small class="text-red-500" *ngIf="submitted && !user.password?.trim()">
+                    كلمة المرور مطلوبة
+                </small>
+            </div>
+
+            <!-- معلومات إضافية للأطباء -->
+            <div *ngIf="user.role === 'Doctor'">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="specialization" class="block font-bold mb-2">التخصص</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            id="specialization" 
+                            [(ngModel)]="user.specialization" 
+                            fluid 
+                            placeholder="أدخل التخصص"
+                        />
+                    </div>
+                    <div>
+                        <label for="specializationAr" class="block font-bold mb-2">التخصص بالعربية</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            id="specializationAr" 
+                            [(ngModel)]="user.specializationAr" 
+                            fluid 
+                            placeholder="أدخل التخصص بالعربية"
+                        />
+                    </div>
+                </div>
+            </div>
+            <!-- معلومات الوردية للموظفين والأطباء -->
+            <div *ngIf="shouldShowShift()">
+                <h6 class="font-semibold mb-3 text-primary">معلومات الوردية</h6>
+                
+                <!-- اختيار أيام العمل -->
+                <div class="mb-4">
+                    <label class="block font-bold mb-2">أيام العمل <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div *ngFor="let day of weekDays; let i = index" class="flex items-center">
+                            <p-checkbox 
+                                [(ngModel)]="shiftDays[i]" 
+                                [binary]="true" 
+                                [inputId]="'day-' + i"
+                            />
+                            <label [for]="'day-' + i" class="mr-2 text-sm">{{ day.label }}</label>
+                        </div>
+                    </div>
+                    <small class="text-red-500" *ngIf="submitted && shouldShowShift() && !hasSelectedShiftDays()">
+                        يجب اختيار يوم واحد على الأقل
+                    </small>
+                </div>
+
+                <!-- أوقات العمل -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="startTime" class="block font-bold mb-2">وقت البداية <span class="text-red-500">*</span></label>
+                        <input 
+                            type="time" 
+                            pInputText 
+                            id="startTime" 
+                            [(ngModel)]="shiftStartTime" 
+                            required 
+                            fluid 
+                        />
+                        <small class="text-red-500" *ngIf="submitted && shouldShowShift() && !shiftStartTime">
+                            وقت البداية مطلوب
+                        </small>
+                    </div>
+                    <div>
+                        <label for="endTime" class="block font-bold mb-2">وقت النهاية <span class="text-red-500">*</span></label>
+                        <input 
+                            type="time" 
+                            pInputText 
+                            id="endTime" 
+                            [(ngModel)]="shiftEndTime" 
+                            required 
+                            fluid 
+                        />
+                        <small class="text-red-500" *ngIf="submitted && shouldShowShift() && !shiftEndTime">
+                            وقت النهاية مطلوب
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <!-- معلومات إضافية للمرضى -->
+            <div *ngIf="user.role === 'Patient'">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="birthDate" class="block font-bold mb-2">تاريخ الميلاد</label>
+                        <p-datepicker 
+                            [(ngModel)]="user.birthDate"
+                            placeholder="اختر تاريخ الميلاد"
+                            fluid
+                        />
+                    </div>
+                    <div>
+                        <label for="bloodType" class="block font-bold mb-2">فصيلة الدم</label>
+                        <p-select 
+                            [(ngModel)]="user.bloodType" 
+                            [options]="bloodTypes"
+                            optionLabel="label"
+                            optionValue="value" 
+                            placeholder="اختر فصيلة الدم"
+                            fluid
+                        />
+                    </div>
+                </div>
+            </div>
+            <!-- معلومات إضافية للموظفين -->
+            <div *ngIf="user.role === 'Staff'">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="jobTitle" class="block font-bold mb-2">المسمى الوظيفي</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            id="jobTitle" 
+                            [(ngModel)]="user.jobTitle" 
+                            fluid 
+                            placeholder="أدخل المسمى الوظيفي (بالإنجليزية)"
+                        />
+                    </div>
+                    <div>
+                        <label for="jobTitleAr" class="block font-bold mb-2">المسمى الوظيفي بالعربية</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            id="jobTitleAr" 
+                            [(ngModel)]="user.jobTitleAr" 
+                            fluid 
+                            placeholder="أدخل المسمى الوظيفي بالعربية"
+                        />
+                    </div>
+                </div>
+            </div>
+            <!-- الحالة -->
+            <div class="flex items-center gap-2">
+                <p-checkbox 
+                    [(ngModel)]="user.isActive" 
+                    [binary]="true" 
+                    inputId="isActive"
+                />
+                <label for="isActive" class="font-medium">المستخدم نشط</label>
+            </div>
+
+        </div>
+    </ng-template>
+
+    <ng-template #footer>
+        <p-button 
+            label="إلغاء" 
+            icon="pi pi-times" 
+            text 
+            (click)="hideDialog()" 
+        />
+        <p-button 
+            label="{{ isEditMode ? 'تحديث' : 'حفظ' }}" 
+            icon="pi pi-check" 
+            (click)="saveUser()" 
+        />
+    </ng-template>
+</p-dialog>
+
+<!-- Confirm Dialog -->
+<p-confirmdialog [style]="{ width: '450px' }" />
+
+<!-- Toast for messages -->
+<p-toast />

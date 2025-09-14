@@ -1,6 +1,6 @@
 // src/app/services/user.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface User {
@@ -48,9 +48,21 @@ export class UserService {
       'Content-Type': 'application/json'
     });
   }
+ getUsers(page: number = 1, limit: number = 10, filters?: Partial<any>): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
 
-  getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl, {
+
+    return this.http.get<any>(this.apiUrl, {
+      headers: this.getHeaders(),
+      params: params
+    });
+  }
+
+  // Keep the old method for backward compatibility (without pagination)
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/all`, {
       headers: this.getHeaders()
     });
   }
@@ -62,13 +74,13 @@ export class UserService {
   }
 
   createUser(userData: CreateUserDto): Observable<any> {
-    return this.http.post(this.apiUrl, userData, {
+    return this.http.post(`${this.apiUrl}/${userData?.role?.toLowerCase()}`, userData, {
       headers: this.getHeaders()
     });
   }
 
   updateUser(id: string, userData: UpdateUserDto): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}`, userData, {
+    return this.http.patch(`/api/user/${userData?.role?.toLowerCase()}/${id}`, userData, {
       headers: this.getHeaders()
     });
   }

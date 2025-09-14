@@ -11,3 +11,9 @@
 @use './_responsive';
 @use './_utils';
 @use './_typography';
+
+::ng-deep .layout-main, .landing-wrapper {
+    width:90% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}

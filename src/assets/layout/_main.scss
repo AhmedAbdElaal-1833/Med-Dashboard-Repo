@@ -10,4 +10,10 @@
 .layout-main {
     flex: 1 1 auto;
     padding-bottom: 2rem;
+    width:90% !important;
+}
+::ng-deep .layout-main, .landing-wrapper {
+    width:90% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }

@@ -1,30 +1,35 @@
-import { Component } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ChartModule } from 'primeng/chart';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { CommonModule } from '@angular/common';
 import { debounceTime, Subscription } from 'rxjs';
-import { LayoutService } from '../../../layout/service/layout.service';
-import { MockReviewsService } from './mock-reviews-service';
+import { MockReviewsService } from '../../components/mock-reviews-service';
+import { LayoutService } from '@/layout/service/layout.service';
+import { UserService } from '@/services/user';
 
 @Component({
-    standalone: true,
-    selector: 'app-revenue-stream-widget',
-    imports: [ChartModule],
-    template: `<div class="card mb-8!">
-        <div class="font-semibold text-xl mb-4">Reviews</div>
-        <p-chart type="bar" [data]="chartData" [options]="chartOptions" class="h-100" />
-    </div>
-    `
+  standalone: true,
+  selector: 'app-revenue',
+  imports: [ChartModule, ProgressSpinnerModule, CommonModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  templateUrl: './revenue.html',
+  styleUrl: './revenue.scss'
 })
-export class RevenueStreamWidget {
-   
+export class Revenue {
+
     chartData: any;
     chartOptions: any;
     subscription!: Subscription;
     reviews: any[] = [];
     loading: boolean = false;
-
+    users: any[] = [];
+    isLoading = false;
+    totalRecords = 0;
+    roleStats: any = {};
     constructor(
         public layoutService: LayoutService,
-        private mockReviewsService: MockReviewsService
+        private mockReviewsService: MockReviewsService,
+        private userService: UserService
     ) {
         this.subscription = this.layoutService.configUpdate$
             .pipe(debounceTime(25))
@@ -64,7 +69,7 @@ export class RevenueStreamWidget {
         const ratingCounts = this.groupReviewsByRating();
 
         this.chartData = {
-            labels: ['1 نجمة', '2 نجمة', '3 نجوم', '4 نجوم', '5 نجوم'],
+            labels: ['1 star', '2 stars', '3 stars', '4 stars', '5 stars'],
             datasets: [
                 {
                     label: 'عدد الريفيوهات',
@@ -82,7 +87,7 @@ export class RevenueStreamWidget {
                         ratingCounts[4] || 0,
                         ratingCounts[5] || 0
                     ],
-                    barThickness: 40,
+                    barThickness: 100,
                     borderRadius: 4
                 }
             ]

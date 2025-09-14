@@ -1,0 +1,180 @@
+<!-- Appointments Toolbar -->
+<p-toolbar styleClass="mb-6">
+    <ng-template #start>
+    </ng-template>
+    
+    <ng-template #end>
+        <!-- Search Input -->
+        <div class="flex gap-2">
+            <p-iconfield iconPosition="left" class="mr-2">
+                <p-inputicon>
+                    <i class="pi pi-search"></i>
+                </p-inputicon>
+                <input 
+                    pInputText 
+                    type="text" 
+                    [(ngModel)]="globalFilter"
+                    (input)="onGlobalFilter($event)" 
+                    placeholder="Search appointments..." 
+                    class="w-full md:w-20rem"
+                />
+            </p-iconfield>
+            <p-button 
+                label="Export" 
+                icon="pi pi-upload" 
+                severity="secondary" 
+                (onClick)="exportAppointmentsCSV()" 
+            />
+        </div>
+    </ng-template>
+</p-toolbar>
+
+<!-- Appointments TreeTable -->
+<p-treeTable 
+    #appointmentTreeTable
+    [value]="appointmentNodes" 
+    [loading]="isLoadingAppointments"
+    selectionMode="checkbox" 
+    [(selection)]="selectedAppointmentNodes"
+    [metaKeySelection]="false"
+    dataKey="key"
+    [scrollable]="true" 
+    scrollHeight="600px"
+    styleClass="p-treetable-gridlines"
+>
+    <!-- Header -->
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 85%">Details</th>
+            <th style="width: 15%">Actions</th>
+        </tr>
+    </ng-template>
+    
+    <!-- Body Template -->
+    <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+        <tr>
+            <!-- Details Column -->
+            <td style="width: 85%" [attr.colspan]="rowData.type === 'appointment-details' ? 4 : 1">
+                <!-- Appointment Node -->
+                <div *ngIf="rowData.type === 'appointment'" class="flex align-items-center gap-3">
+                    <p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>
+                    <i class="pi pi-calendar text-blue-500 text-lg ml-2"></i>
+                    <div>
+                        <div class="font-medium text-base">{{ formatAppointmentDate(rowData.date) }}</div>
+                        <div class="text-sm text-gray-500" *ngIf="rowData.notes">
+                            {{ rowData.notes }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Table when expanded -->
+                <div *ngIf="rowData.type === 'appointment-details'" class="w-full mt-3">
+                    <p-table 
+                        [value]="[rowData.appointmentData]" 
+                        styleClass="p-datatable-sm appointment-details-table"
+                        [scrollable]="true">
+                        
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center bg-blue-50">Patient Information</th>
+                                <th colspan="2" class="text-center bg-green-50">Doctor Information</th>
+                                <th colspan="2" class="text-center bg-orange-50">Department Information</th>
+                            </tr>
+                            <tr>
+                                <th class="bg-blue-50">Patient Name</th>
+                                <th class="bg-blue-50">Patient Email</th>
+                                <th class="bg-green-50">Doctor Name</th>
+                                <th class="bg-green-50">Doctor Email</th>
+                                <th class="bg-orange-50">Department Name</th>
+                                <th class="bg-orange-50">Department Name (AR)</th>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="body" let-appointment>
+                            <tr>
+                                <!-- Patient Data -->
+                                <td class="bg-blue-25">
+                                    <div class="flex align-items-center gap-2">
+                                        <i class="pi pi-user text-blue-600"></i>
+                                        {{ appointment.patient?.name || 'No Patient Assigned' }}
+                                    </div>
+                                </td>
+                                <td class="bg-blue-25">{{ appointment.patient?.email || 'Not Available' }}</td>
+                                
+                                <!-- Doctor Data -->
+                                <td class="bg-green-25">
+                                    <div class="flex align-items-center gap-2">
+                                        <i class="pi pi-user-edit text-green-600"></i>
+                                        {{ appointment.doctor?.name || 'Not Available' }}
+                                    </div>
+                                </td>
+                                <td class="bg-green-25">{{ appointment.doctor?.email || 'Not Available' }}</td>
+                                
+                                <!-- Department Data -->
+                                <td class="bg-orange-25">
+                                    <div class="flex align-items-center gap-2">
+                                        <i class="pi pi-building text-orange-600"></i>
+                                        {{ appointment.department?.name || 'Not Available' }}
+                                    </div>
+                                </td>
+                                <td class="bg-orange-25">{{ appointment.department?.nameAr || 'Not Available' }}</td>
+                            </tr>
+                            <tr>
+                                <!-- Patient Phone -->
+                                <td class="bg-blue-25">
+                                    <span class="font-medium">Phone:</span>
+                                    {{ appointment.patient?.phone || 'Not Available' }}
+                                </td>
+                                <td class="bg-blue-25">
+                                    <span class="font-medium">Role:</span>
+                                    {{ appointment.patient?.role || 'Patient' }}
+                                </td>
+                                
+                                <!-- Doctor Phone -->
+                                <td class="bg-green-25">
+                                    <span class="font-medium">Phone:</span>
+                                    {{ appointment.doctor?.phone || 'Not Available' }}
+                                </td>
+                                <td class="bg-green-25">
+                                    <span class="font-medium">Role:</span>
+                                    {{ appointment.doctor?.role || 'Doctor' }}
+                                </td>
+                                
+                                <!-- Department ID -->
+                                <td class="bg-orange-25" colspan="2">
+                                    <span class="font-medium">Department ID:</span>
+                                    {{ appointment.department?._id || 'Not Available' }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </td>
+            
+            
+            <td  style="width: 15%" *ngIf="rowData.type === 'appointment'">
+                <div class="flex gap-1">
+                    <p-button 
+                        icon="pi pi-trash" 
+                        severity="danger" 
+                        size="small"
+                        [outlined]="true" 
+                        (click)="deleteAppointment(rowData)"
+                        pTooltip="Delete"
+                    />
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+</p-treeTable>
+
+<!-- Appointment Dialog -->
+<p-dialog 
+    [(visible)]="appointmentDialog" 
+    [style]="{width: '50vw'}" 
+    header="{{ isEditAppointmentMode ? 'Edit Appointment' : 'Create New Appointment' }}" 
+    [modal]="true"
+    styleClass="p-fluid appointment-dialog"
+>
+    <!-- Your existing appointment dialog content -->
+</p-dialog>

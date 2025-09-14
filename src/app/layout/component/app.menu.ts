@@ -32,6 +32,10 @@ export class AppMenu {
                 label: 'User Management',
                 items: [{ label: 'Users', icon: 'pi pi-fw pi-user', routerLink: ['/users'] }]
             },
+            {
+                label: 'User appointment',
+                items: [{ label: 'appointment', icon: 'pi pi-fw pi-user', routerLink: ['/appointment'] }]
+            },
             // {
             //     label: 'UI Components',
             //     items: [

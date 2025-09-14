@@ -9,6 +9,8 @@ import { DepartmentsManagment } from '@/components/departments-managment/departm
 import { UserComponent } from '@/components/User-Management/user-management';
 import { Login } from '@/pages/auth/login';
 import { authGardGuard } from '@/pages/auth/auth-gard-guard';
+import { Appointment } from '@/components/appointment/appointment';
+import { Dashboard2 } from '@/pages/dashboard/components/dashboard2/dashboard2';
 
 export const appRoutes: Routes = [ 
  // Default route
@@ -24,9 +26,10 @@ export const appRoutes: Routes = [
     component: AppLayout,
     canActivate: [authGardGuard], // Protect with auth guard
     children: [
-      { path: 'dashboard', component: Dashboard },
+      { path: 'dashboard', component: Dashboard2 },
       { path: 'departments', component: DepartmentsManagment },
       { path: 'users', component: UserComponent },
+      { path: 'appointment', component: Appointment },
     ]
   },
   
